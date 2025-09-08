@@ -652,8 +652,8 @@ class VideoBase:
         if animated_y is not None:
             properties['y'] = animated_y
             
-        # 透明度のアニメーション
-        animated_alpha = self.animation_manager.get_animated_value('alpha', time, self.base_alpha)
+        # 透明度のアニメーション（background_alphaをベースとして使用）
+        animated_alpha = self.animation_manager.get_animated_value('alpha', time, self.background_alpha)
         if animated_alpha is not None:
             properties['alpha'] = max(0, min(255, int(animated_alpha)))
             

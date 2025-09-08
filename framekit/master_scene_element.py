@@ -222,18 +222,24 @@ class MasterScene:
     
     def _capture_frame(self):
         """現在の画面をキャプチャ"""
-        # 高解像度でキャプチャ
-        pixels = glReadPixels(0, 0, self.render_width, self.render_height, GL_RGB, GL_UNSIGNED_BYTE)
+        # 高解像度でキャプチャ（アルファチャンネル込み）
+        pixels = glReadPixels(0, 0, self.render_width, self.render_height, GL_RGBA, GL_UNSIGNED_BYTE)
         image = np.frombuffer(pixels, dtype=np.uint8)
-        image = image.reshape((self.render_height, self.render_width, 3))
+        image = image.reshape((self.render_height, self.render_width, 4))
         image = np.flipud(image)  # OpenGLは左下が原点なので上下反転
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        
+        # RGBAからBGRAに変換
+        image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGRA)
         
         # スーパーサンプリングの場合は出力解像度にダウンスケール
         if self.render_scale > 1:
             image = cv2.resize(image, (self.width, self.height), interpolation=cv2.INTER_AREA)
         
-        return image
+        # MP4出力用にアルファチャンネルを除去してBGRに変換
+        # 透明部分は黒背景とブレンドされる
+        bgr_image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+        
+        return bgr_image
     
     def _create_audio_mix(self, video_path: str):
         """FFmpegを使ってビデオにオーディオを追加"""

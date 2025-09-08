@@ -366,10 +366,8 @@ class TextElement(VideoBase):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         
-        # アルファ値を適用（アニメーション考慮）
+        # アルファ値を適用（透明度とアニメーションを考慮）
         alpha_value = 1.0
-        if hasattr(self, 'background_alpha'):
-            alpha_value = self.background_alpha / 255.0
         glColor4f(1.0, 1.0, 1.0, alpha_value)
         
         # テクスチャ付きの四角形を描画（品質スケールを考慮）

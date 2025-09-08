@@ -24,7 +24,7 @@ def create_dialogue_subtitle(text: str, start_time: float, duration: float = 4.0
     """
     subtitle = (
         TextElement(text, size=30, color=(255, 255, 255), font_path=font_path)
-            .set_background((0, 0, 0), alpha=200, padding={'top': 12, 'bottom': 12, 'left': 25, 'right': 25})
+            .set_background((255, 255, 255), padding={'top': 12, 'bottom': 12, 'left': 25, 'right': 25})
             .set_corner_radius(10)
             .set_alignment('center')
             .set_line_spacing(6)
