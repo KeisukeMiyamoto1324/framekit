@@ -119,13 +119,16 @@ class MasterScene:
         from .video_element import VideoElement
         for element in scene.elements:
             if isinstance(element, AudioElement):
-                # Standalone audio elements are always valid
+                # Adjust audio timing to account for scene start time
+                element.start_time += scene.start_time
                 self.audio_elements.append(element)
             elif isinstance(element, VideoElement):
                 # Ensure the video element's audio element is created
                 element._ensure_audio_element()
                 audio_element = element.get_audio_element()
                 if audio_element is not None:
+                    # Adjust audio timing to account for scene start time
+                    audio_element.start_time += scene.start_time
                     # Only add if the video actually has audio
                     self.audio_elements.append(audio_element)
     
