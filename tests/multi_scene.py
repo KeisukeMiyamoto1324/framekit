@@ -13,7 +13,7 @@ master.set_output("test.mp4")
 
 for telop in ["Hello", "Good morning", "Good evening"]:
     scene = Scene().start_at(master.total_duration)
-    audio = AudioElement("sample_asset/effect1.mp3").set_volume(1)
+    audio = AudioElement("sample_asset/effect1.mp3").set_volume(10)
     text = TextElement(telop, size=28).set_duration(audio.duration)
     
     scene.add(text)

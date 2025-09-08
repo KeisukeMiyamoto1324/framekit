@@ -115,7 +115,7 @@ class AudioElement(VideoBase):
         Returns:
             Self for method chaining
         """
-        self.volume = max(0.0, min(1.0, volume))
+        self.volume = max(0.0, volume)  # Only clamp the lower bound, allow amplification
         self.original_volume = self.volume
         return self
     
@@ -192,7 +192,7 @@ class AudioElement(VideoBase):
             audio_time: Time within the audio track in seconds
             
         Returns:
-            Effective volume level (0.0-1.0) after applying all effects
+            Effective volume level (>=0.0) after applying all effects
         """
         if self.is_muted:
             return 0.0
@@ -212,7 +212,7 @@ class AudioElement(VideoBase):
                 fade_out_factor = remaining_time / self.fade_out_duration
                 effective_volume *= fade_out_factor
         
-        return max(0.0, min(1.0, effective_volume))
+        return max(0.0, effective_volume)  # Only clamp lower bound, allow amplification
     
     def _get_audio_at_time(self, audio_time: float) -> None:
         """Get audio data at specific time (placeholder implementation).
