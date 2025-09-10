@@ -92,6 +92,17 @@ class MasterScene:
     
     def add(self, scene: Scene):
         """シーンを追加"""
+        # シーンのstart_timeが明示的に設定されていない場合（Noneの場合）、
+        # 前のシーンの終了時間を開始時間として設定
+        if scene.start_time is None and self.scenes:
+            # 最後に追加されたシーンの終了時間を取得
+            last_scene = self.scenes[-1]
+            last_scene_start = last_scene.start_time if last_scene.start_time is not None else 0.0
+            scene.start_time = last_scene_start + last_scene.duration
+        elif scene.start_time is None:
+            # 最初のシーンでstart_timeが設定されていない場合は0から開始
+            scene.start_time = 0.0
+        
         self.scenes.append(scene)
         # 全体の継続時間を更新
         scene_end_time = scene.start_time + scene.duration

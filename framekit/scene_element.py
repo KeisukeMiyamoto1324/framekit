@@ -18,7 +18,7 @@ class Scene:
     def __init__(self) -> None:
         """Initialize a new Scene with no elements."""
         self.elements: List[VideoBase] = []
-        self.start_time: float = 0.0
+        self.start_time: float = None  # None means not explicitly set
         self.duration: float = 0.0
     
     def add(self, element: VideoBase) -> 'Scene':
@@ -85,7 +85,9 @@ class Scene:
         Args:
             time: Current time in seconds (absolute time, not relative to scene)
         """
-        scene_time = time - self.start_time
+        # start_timeがNoneの場合は0として扱う
+        start_time = self.start_time if self.start_time is not None else 0.0
+        scene_time = time - start_time
         if scene_time < 0 or scene_time > self.duration:
             return
         
