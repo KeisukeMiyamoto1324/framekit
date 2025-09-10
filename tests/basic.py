@@ -23,13 +23,14 @@ def create_dialogue_subtitle(text: str, start_time: float, duration: float = 4.0
         Configured TextElement for the subtitle
     """
     subtitle = (
-        TextElement(text, size=30, color=(255, 255, 255), font_path=font_path)
+        TextElement(text, size=50, color=(255, 255, 255), font_path=font_path)
             .set_background((255, 255, 255), padding={'top': 12, 'bottom': 12, 'left': 25, 'right': 25})
             .set_corner_radius(10)
             .set_alignment('center')
             .set_line_spacing(6)
             .start_at(start_time)
             .set_duration(duration)
+            .set_outline((50, 50, 50), 7)
     )
     
     # Position at bottom center of screen

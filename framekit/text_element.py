@@ -23,6 +23,8 @@ class TextElement(VideoBase):
         texture_height: Height of the texture in pixels
         alignment: Text alignment for multi-line text
         line_spacing: Additional spacing between lines in pixels
+        outline_color: RGB color tuple for text outline
+        outline_width: Width of text outline in pixels
     """
     
     def __init__(self, text: str, size: int = 50, color: Tuple[int, int, int] = (255, 255, 255), 
@@ -51,6 +53,10 @@ class TextElement(VideoBase):
         # Multi-line and alignment settings
         self.alignment: Literal['left', 'center', 'right'] = 'left'
         self.line_spacing: int = 0
+        
+        # Text outline settings
+        self.outline_color: Optional[Tuple[int, int, int]] = None
+        self.outline_width: int = 0
         
         self._create_text_texture()
         # 初期化時にサイズを計算
@@ -84,6 +90,24 @@ class TextElement(VideoBase):
             Self for method chaining
         """
         self.line_spacing = spacing
+        # テクスチャを再作成する必要がある
+        self.texture_created = False
+        # サイズを再計算
+        self.calculate_size()
+        return self
+    
+    def set_outline(self, color: Tuple[int, int, int], width: int) -> 'TextElement':
+        """Set text outline with specified color and width.
+        
+        Args:
+            color: RGB color tuple for outline (0-255 for each component)
+            width: Outline width in pixels
+            
+        Returns:
+            Self for method chaining
+        """
+        self.outline_color = color
+        self.outline_width = width
         # テクスチャを再作成する必要がある
         self.texture_created = False
         # サイズを再計算
@@ -149,8 +173,16 @@ class TextElement(VideoBase):
                 'text': line,
                 'width': line_width,
                 'height': line_height,
-                'y_offset': y_offset
+                'y_offset': y_offset,
+                'original_width': line_width,  # アウトライン適用前の幅を保存
+                'original_height': line_height  # アウトライン適用前の高さを保存
             })
+            
+            # アウトライン幅を考慮してサイズを調整（品質スケール適用）
+            if self.outline_width > 0:
+                outline_scaled = self.outline_width * self.quality_scale
+                line_width += outline_scaled * 2
+                line_height += outline_scaled * 2
             
             max_width = max(max_width, line_width)
             total_height += line_height
@@ -174,24 +206,43 @@ class TextElement(VideoBase):
         
         for line_data in line_info:
             if line_data['text'].strip():  # 空行でない場合のみ描画
-                # 水平位置を計算（配置設定に基づく）
-                if self.alignment == 'left':
-                    x_pos = 0
-                elif self.alignment == 'center':
-                    x_pos = (content_width - line_data['width']) // 2
-                else:  # right
-                    x_pos = content_width - line_data['width']
+                # アウトライン分のオフセットを計算
+                outline_offset = self.outline_width * self.quality_scale if self.outline_width > 0 else 0
                 
-                # テキストを描画（太字の場合はstroke_widthを使用）
-                if self.bold:
-                    draw.text((x_pos, current_y + line_data['y_offset']), 
+                # 水平位置を計算（配置設定に基づく、元のテキスト幅を使用）
+                original_width = line_data['original_width']
+                if self.alignment == 'left':
+                    x_pos = outline_offset
+                elif self.alignment == 'center':
+                    x_pos = (content_width - original_width) // 2
+                else:  # right
+                    x_pos = content_width - original_width - outline_offset
+                
+                # テキストを描画（アウトライン、太字の場合の処理を含む）
+                stroke_width = 0
+                stroke_fill = None
+                
+                # アウトラインが設定されている場合
+                if self.outline_color is not None and self.outline_width > 0:
+                    stroke_width = self.outline_width * self.quality_scale
+                    stroke_fill = (*self.outline_color, 255)
+                # 太字の場合（アウトラインが設定されていない場合のみ）
+                elif self.bold:
+                    stroke_width = 2 * self.quality_scale
+                    stroke_fill = (*self.color, 255)
+                
+                # Y位置にアウトライン分のオフセットを追加
+                y_pos = current_y + line_data['y_offset'] + outline_offset
+                
+                if stroke_width > 0 and stroke_fill is not None:
+                    draw.text((x_pos, y_pos), 
                              line_data['text'], 
                              font=font, 
                              fill=(*self.color, 255),
-                             stroke_width=2,
-                             stroke_fill=(*self.color, 255))
+                             stroke_width=stroke_width,
+                             stroke_fill=stroke_fill)
                 else:
-                    draw.text((x_pos, current_y + line_data['y_offset']), 
+                    draw.text((x_pos, y_pos), 
                              line_data['text'], 
                              font=font, 
                              fill=(*self.color, 255))
@@ -282,6 +333,11 @@ class TextElement(VideoBase):
                 bbox = dummy_draw.textbbox((0, 0), line, font=font)
                 line_width = bbox[2] - bbox[0]
                 line_height = bbox[3] - bbox[1]
+                
+                # アウトライン幅を考慮してサイズを調整
+                if self.outline_width > 0:
+                    line_width += self.outline_width * 2
+                    line_height += self.outline_width * 2
             else:  # 空行の場合
                 line_width = 0
                 line_height = font.getmetrics()[0]  # ascent only
