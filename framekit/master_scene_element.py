@@ -124,22 +124,35 @@ class MasterScene:
                 if self.total_duration > audio_element.duration:
                     audio_element.duration = self.total_duration
     
-    def _collect_audio_elements(self, scene: Scene):
-        """シーンからオーディオ要素を収集"""
+    def _collect_audio_elements(self, scene: Scene, time_offset: float = 0.0):
+        """シーンからオーディオ要素を収集（ネストされたシーンにも対応）
+        
+        Args:
+            scene: Audio elements to collect from
+            time_offset: Cumulative time offset from parent scenes
+        """
         from .audio_element import AudioElement
         from .video_element import VideoElement
+        
+        # Calculate the total time offset for this scene
+        scene_start = scene.start_time if scene.start_time is not None else 0.0
+        total_offset = time_offset + scene_start
+        
         for element in scene.elements:
-            if isinstance(element, AudioElement):
-                # Adjust audio timing to account for scene start time
-                element.start_time += scene.start_time
+            if isinstance(element, Scene):
+                # Recursively collect from nested scenes
+                self._collect_audio_elements(element, total_offset)
+            elif isinstance(element, AudioElement):
+                # Adjust audio timing to account for cumulative scene start times
+                element.start_time += total_offset
                 self.audio_elements.append(element)
             elif isinstance(element, VideoElement):
                 # Ensure the video element's audio element is created
                 element._ensure_audio_element()
                 audio_element = element.get_audio_element()
                 if audio_element is not None:
-                    # Adjust audio timing to account for scene start time
-                    audio_element.start_time += scene.start_time
+                    # Adjust audio timing to account for cumulative scene start times
+                    audio_element.start_time += total_offset
                     # Only add if the video actually has audio
                     self.audio_elements.append(audio_element)
     
@@ -171,13 +184,16 @@ class MasterScene:
         return self
     
     def _apply_quality_to_scene(self, scene):
-        """シーンの要素に品質設定を適用"""
+        """シーンの要素に品質設定を適用（ネストされたシーンにも対応）"""
         from .text_element import TextElement
         from .image_element import ImageElement
         from .video_element import VideoElement
         
         for element in scene.elements:
-            if isinstance(element, TextElement):
+            if isinstance(element, Scene):
+                # Recursively apply quality to nested scenes
+                self._apply_quality_to_scene(element)
+            elif isinstance(element, TextElement):
                 if not hasattr(element, 'quality_scale') or element.quality_scale != self.render_scale:
                     element.quality_scale = self.render_scale
                     # テクスチャを再作成するためのフラグをリセット
