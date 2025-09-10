@@ -20,5 +20,16 @@ for telop in ["Hello", "Good morning", "Good evening"]:
     scene.add(audio)
     
     master.add(scene)
-    
+
+text = (
+    TextElement("Special", size=28)
+        .set_duration(4)
+        .start_at(2)
+        .position(x=100, y=100)
+)
+scene = Scene()
+scene.start_at(0)
+scene.add(text)
+
+master.add(scene)
 master.render()
