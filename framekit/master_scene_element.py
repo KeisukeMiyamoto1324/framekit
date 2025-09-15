@@ -70,14 +70,14 @@ def has_audio_stream(video_path: str) -> bool:
 
 class MasterScene:
     """マスターシーンクラス - 全体の動画を管理"""
-    def __init__(self, width: int = 1920, height: int = 1080, fps: int = 60, quality: Literal["low", "medium", "high"] = "medium"):
+    def __init__(self, output_filename: str = "output_video.mp4", width: int = 1920, height: int = 1080, fps: int = 60, quality: Literal["low", "medium", "high"] = "medium"):
         self.width = width
         self.height = height
         self.fps = fps
         self.quality = quality  # "low", "medium", "high"
         self.scenes: List[Scene] = []
         self.total_duration = 0.0
-        self.output_filename = "output_video.mp4"
+        self.output_filename = output_filename
         self.audio_elements = []  # オーディオ要素を追跡
         
         # 品質設定に基づいてスーパーサンプリング倍率を設定
