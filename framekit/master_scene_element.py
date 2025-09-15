@@ -90,8 +90,13 @@ class MasterScene:
         self.render_width = width * self.render_scale
         self.render_height = height * self.render_scale
     
-    def add(self, scene: Scene):
-        """シーンを追加"""
+    def add(self, scene: Scene, layer: Literal["top", "bottom"] = "top"):
+        """シーンを追加
+        
+        Args:
+            scene: 追加するシーン
+            layer: "top" を指定すると一番上に追加（最後にレンダリング）、"bottom" を指定すると一番下に追加（最初にレンダリング）
+        """
         # シーンのstart_timeが明示的に設定されていない場合（Noneの場合）、
         # 前のシーンの終了時間を開始時間として設定
         if scene.start_time is None and self.scenes:
@@ -103,7 +108,11 @@ class MasterScene:
             # 最初のシーンでstart_timeが設定されていない場合は0から開始
             scene.start_time = 0.0
         
-        self.scenes.append(scene)
+        # Add scene based on layer parameter
+        if layer == "bottom":
+            self.scenes.insert(0, scene)
+        else:  # layer == "top" (default)
+            self.scenes.append(scene)
         # 全体の継続時間を更新
         scene_end_time = scene.start_time + scene.duration
         self.total_duration = max(self.total_duration, scene_end_time)
@@ -224,19 +233,14 @@ class MasterScene:
     
     def _setup_video_writer(self):
         """動画書き込み設定"""
-        # 出力ディレクトリを作成
-        output_dir = "output"
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        
         # オーディオ要素がある場合は一時ファイル、ない場合は指定ファイル名
         if self.audio_elements:
             # 一時ファイル名を作成
             base_name = os.path.splitext(self.output_filename)[0]
-            temp_filename = f"{base_name}_temp_video_only.mp4"
-            full_path = os.path.join(output_dir, temp_filename)
+            ext = os.path.splitext(self.output_filename)[1]
+            full_path = f"{base_name}_temp_video_only{ext}"
         else:
-            full_path = os.path.join(output_dir, self.output_filename)
+            full_path = self.output_filename
         
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         
@@ -288,8 +292,7 @@ class MasterScene:
             print("  Ubuntu: sudo apt install ffmpeg")
             return video_path
         
-        output_dir = "output"
-        final_output = os.path.join(output_dir, self.output_filename)
+        final_output = self.output_filename
         
         # 複数のオーディオファイルを処理するためのコマンド構築
         cmd = ['ffmpeg', '-y', '-i', video_path]

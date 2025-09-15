@@ -1,4 +1,4 @@
-from framekit import MasterScene, Scene, TextElement
+from framekit import MasterScene, Scene, TextElement, AudioElement
 
 def main():
     # Create master scene
@@ -38,6 +38,13 @@ def main():
             .set_duration(3)
     )
     scene.add(description)
+    
+    # Add BGM
+    bgm = (
+        AudioElement("sample_asset/yukkuri_bgm.mp3")
+            .set_loop_until_scene_end()
+    )
+    scene.add(bgm)
     
     # Render
     master_scene.add(scene)

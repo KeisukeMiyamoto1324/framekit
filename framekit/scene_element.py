@@ -1,4 +1,4 @@
-from typing import List, Union, TYPE_CHECKING
+from typing import List, Union, TYPE_CHECKING, Literal
 from .video_base import VideoBase
 
 if TYPE_CHECKING:
@@ -26,11 +26,12 @@ class Scene(VideoBase):
         self.start_time: float = None  # None means not explicitly set
         self.duration: float = 0.0
     
-    def add(self, element: Union[VideoBase, 'Scene']) -> 'Scene':
+    def add(self, element: Union[VideoBase, 'Scene'], layer: Literal["top", "bottom"] = "top") -> 'Scene':
         """Add an element or scene to this scene.
         
         Args:
             element: VideoBase element (text, image, video, audio) or Scene to add
+            layer: "top" to add on top (rendered last), "bottom" to add at bottom (rendered first)
             
         Returns:
             Self for method chaining
@@ -39,7 +40,11 @@ class Scene(VideoBase):
         from .video_element import VideoElement
         from .image_element import ImageElement
         
-        self.elements.append(element)
+        # Add element based on layer parameter
+        if layer == "bottom":
+            self.elements.insert(0, element)
+        else:  # layer == "top" (default)
+            self.elements.append(element)
         
         # Handle duration calculation for different element types
         if isinstance(element, Scene):
