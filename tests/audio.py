@@ -11,25 +11,25 @@ def main():
     
     # Scene 1: Title
     scene1 = Scene()
+    effect1 = AudioElement("sample_asset/short1.wav")
     title = (
         TextElement("FrameKit", size=80, color=(255, 255, 255))
             .position(960, 400, anchor="center")
             .start_at(0)
-            .set_duration(2)
+            .set_duration(effect1.duration)
     )
-    effect1 = AudioElement("sample_asset/effect1.mp3")
     scene1.add(title)
     scene1.add(effect1)
     
     # Scene 2: Subtitle
     scene2 = Scene()
+    effect2 = AudioElement("sample_asset/short2.wav")
     subtitle = (
         TextElement("Programmatic Video Generation with Python", size=40, color=(200, 200, 255))
             .position(960, 500, anchor="center")
             .start_at(0)
-            .set_duration(2)
+            .set_duration(effect2.duration)
     )
-    effect2 = AudioElement("sample_asset/effect1.mp3")
     scene2.add(subtitle)
     scene2.add(effect2)
     
@@ -45,35 +45,15 @@ def main():
     scene3.add(description)
     scene3.add(effect3)
     
-    # Scene 4: BGM
-    scene4 = Scene()
-    bgm = (
-        AudioElement("sample_asset/yukkuri_bgm.mp3")
-            .set_loop_until_scene_end()
-    )
-    scene4.add(bgm)
-    scene4.start_at(0)
-    
     scene = Scene()
     
     # Add scenes with sequential timing
     scene.add(scene1)  # 0-2 seconds
     scene.add(scene2)  # 2-4 seconds
     scene.add(scene3)  # 4-6 seconds
-    scene.add(scene4)  # Background audio throughout
-    
-    scene5 = Scene()
-    subtext = (
-        TextElement("Hello Hello", size=30, color=(150, 255, 60))
-            .position(960, 600, anchor="center")
-            .start_at(0)
-            .set_duration(2)
-    )
-    scene5.add(subtext)
     
     # Render
     master_scene.add(scene)
-    master_scene.add(scene5)
     master_scene.render()
 
 if __name__ == "__main__":

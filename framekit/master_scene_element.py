@@ -79,6 +79,7 @@ class MasterScene:
         self.total_duration = 0.0
         self.output_filename = output_filename
         self.audio_elements = []  # オーディオ要素を追跡
+        self._has_content_at_start = False  # Track if master scene has content at time 0
         
         # 品質設定に基づいてスーパーサンプリング倍率を設定
         self.quality_multipliers = {
@@ -98,15 +99,24 @@ class MasterScene:
             layer: "top" を指定すると一番上に追加（最後にレンダリング）、"bottom" を指定すると一番下に追加（最初にレンダリング）
         """
         # シーンのstart_timeが明示的に設定されていない場合（Noneの場合）、
-        # 前のシーンの終了時間を開始時間として設定
-        if scene.start_time is None and self.scenes:
-            # 最後に追加されたシーンの終了時間を取得
-            last_scene = self.scenes[-1]
-            last_scene_start = last_scene.start_time if last_scene.start_time is not None else 0.0
-            scene.start_time = last_scene_start + last_scene.duration
-        elif scene.start_time is None:
-            # 最初のシーンでstart_timeが設定されていない場合は0から開始
-            scene.start_time = 0.0
+        # 前のシーンの終了時間を開始時間として設定（逐次再生）
+        if scene.start_time is None:
+            # シーンが0秒時点でコンテンツを持っているかチェック
+            scene_has_content_at_start = self._scene_has_content_at_time(scene, 0.0)
+            
+            if scene_has_content_at_start and not self._has_content_at_start:
+                # シーンに0秒時点でコンテンツがあり、マスターシーンにまだ0秒コンテンツがない場合
+                # シーンを0秒から開始させる
+                scene.start_time = 0.0
+                self._has_content_at_start = True
+            elif self.scenes:
+                # 通常の逐次配置
+                last_scene = self.scenes[-1]
+                last_scene_start = last_scene.start_time if last_scene.start_time is not None else 0.0
+                scene.start_time = last_scene_start + last_scene.duration
+            else:
+                # 最初のシーンでstart_timeが設定されていない場合は0から開始
+                scene.start_time = 0.0
         
         # Add scene based on layer parameter
         if layer == "bottom":
@@ -123,6 +133,29 @@ class MasterScene:
         # マスターシーン全体の長さに合わせてBGMの持続時間を更新
         self._update_master_bgm_durations()
         return self
+    
+    def _scene_has_content_at_time(self, scene, time: float) -> bool:
+        """Check if a scene has any visible content at the specified time.
+        
+        Args:
+            scene: Scene to check
+            time: Time to check (relative to scene start)
+            
+        Returns:
+            True if scene has visible content at the specified time
+        """
+        for element in scene.elements:
+            if isinstance(element, Scene):
+                # Recursively check nested scenes
+                element_start = element.start_time if element.start_time is not None else 0.0
+                if element_start <= time < element_start + element.duration:
+                    if self._scene_has_content_at_time(element, time - element_start):
+                        return True
+            else:
+                # Check if non-scene element is visible at this time
+                if element.start_time <= time < element.start_time + element.duration:
+                    return True
+        return False
     
     def _update_master_bgm_durations(self):
         """マスターシーン全体の長さに合わせてBGMの持続時間を更新"""
