@@ -64,6 +64,7 @@ def main():
     
     # Render
     master_scene.add(scene)
+    master_scene.add(scene)
     master_scene.render()
 
 if __name__ == "__main__":

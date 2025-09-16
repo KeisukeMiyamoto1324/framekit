@@ -25,6 +25,7 @@ class Scene(VideoBase):
         # Override the inherited start_time to maintain Scene's None-based logic
         self.start_time: float = None  # None means not explicitly set
         self.duration: float = 0.0
+        self._has_content_at_start: bool = False  # Track if scene has content at time 0
     
     def add(self, element: Union[VideoBase, 'Scene'], layer: Literal["top", "bottom"] = "top") -> 'Scene':
         """Add an element or scene to this scene.
@@ -49,16 +50,25 @@ class Scene(VideoBase):
         # Handle duration calculation for different element types
         if isinstance(element, Scene):
             # シーンのstart_timeが明示的に設定されていない場合（Noneの場合）、
-            # 前のシーンの終了時間を開始時間として設定
+            # 前のシーンの終了時間を開始時間として設定（逐次再生）
             if element.start_time is None:
-                # 既存のシーン要素の中で最後のシーンの終了時間を取得
-                last_scene_end_time = 0.0
-                for existing_element in self.elements:
-                    if isinstance(existing_element, Scene):
-                        existing_start = existing_element.start_time if existing_element.start_time is not None else 0.0
-                        existing_end = existing_start + existing_element.duration
-                        last_scene_end_time = max(last_scene_end_time, existing_end)
-                element.start_time = last_scene_end_time
+                # 子シーンが0秒時点でコンテンツを持っているかチェック
+                child_has_content_at_start = self._scene_has_content_at_time(element, 0.0)
+                
+                if child_has_content_at_start and not self._has_content_at_start:
+                    # 子シーンに0秒時点でコンテンツがあり、親シーンにまだ0秒コンテンツがない場合
+                    # 子シーンを0秒から開始させる
+                    element.start_time = 0.0
+                    self._has_content_at_start = True
+                else:
+                    # 通常の逐次配置
+                    last_scene_end_time = 0.0
+                    for existing_element in self.elements:
+                        if isinstance(existing_element, Scene):
+                            existing_start = existing_element.start_time if existing_element.start_time is not None else 0.0
+                            existing_end = existing_start + existing_element.duration
+                            last_scene_end_time = max(last_scene_end_time, existing_end)
+                    element.start_time = last_scene_end_time
             
             # For nested scenes, calculate end time based on scene's own timing
             element_start = element.start_time if element.start_time is not None else 0.0
@@ -77,6 +87,29 @@ class Scene(VideoBase):
         # BGMモードのオーディオ要素とループモードのビデオ/画像要素の持続時間を更新（シーン時間決定後）
         self._update_loop_element_durations()
         return self
+    
+    def _scene_has_content_at_time(self, scene: 'Scene', time: float) -> bool:
+        """Check if a scene has any visible content at the specified time.
+        
+        Args:
+            scene: Scene to check
+            time: Time to check (relative to scene start)
+            
+        Returns:
+            True if scene has visible content at the specified time
+        """
+        for element in scene.elements:
+            if isinstance(element, Scene):
+                # Recursively check nested scenes
+                element_start = element.start_time if element.start_time is not None else 0.0
+                if element_start <= time < element_start + element.duration:
+                    if self._scene_has_content_at_time(element, time - element_start):
+                        return True
+            else:
+                # Check if non-scene element is visible at this time
+                if element.start_time <= time < element.start_time + element.duration:
+                    return True
+        return False
     
     def _update_loop_element_durations(self) -> None:
         """Update loop element durations to match scene length.
