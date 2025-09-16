@@ -48,8 +48,19 @@ class Scene(VideoBase):
         
         # Handle duration calculation for different element types
         if isinstance(element, Scene):
+            # シーンのstart_timeが明示的に設定されていない場合（Noneの場合）、
+            # 前のシーンの終了時間を開始時間として設定
+            if element.start_time is None:
+                # 既存のシーン要素の中で最後のシーンの終了時間を取得
+                last_scene_end_time = 0.0
+                for existing_element in self.elements:
+                    if isinstance(existing_element, Scene):
+                        existing_start = existing_element.start_time if existing_element.start_time is not None else 0.0
+                        existing_end = existing_start + existing_element.duration
+                        last_scene_end_time = max(last_scene_end_time, existing_end)
+                element.start_time = last_scene_end_time
+            
             # For nested scenes, calculate end time based on scene's own timing
-            # Handle case where start_time might be None
             element_start = element.start_time if element.start_time is not None else 0.0
             scene_end_time = element_start + element.duration
             self.duration = max(self.duration, scene_end_time)

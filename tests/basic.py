@@ -54,13 +54,16 @@ def main():
     scene4.add(bgm)
     scene4.start_at(0)
     
+    scene = Scene()
+    
     # Add scenes with sequential timing
-    master_scene.add(scene1)  # 0-2 seconds
-    master_scene.add(scene2)  # 2-4 seconds
-    master_scene.add(scene3)  # 4-6 seconds
-    master_scene.add(scene4)  # Background audio throughout
+    scene.add(scene1)  # 0-2 seconds
+    scene.add(scene2)  # 2-4 seconds
+    scene.add(scene3)  # 4-6 seconds
+    scene.add(scene4)  # Background audio throughout
     
     # Render
+    master_scene.add(scene)
     master_scene.render()
 
 if __name__ == "__main__":
