@@ -41,6 +41,13 @@ class Scene(VideoBase):
         from .video_element import VideoElement
         from .image_element import ImageElement
         
+        print(f"DEBUG: Adding element to scene, current scene duration: {self.duration}")
+        print(f"DEBUG: Element type: {type(element).__name__}")
+        if isinstance(element, Scene):
+            print(f"DEBUG: Child scene duration: {element.duration}, start_time: {element.start_time}")
+        else:
+            print(f"DEBUG: Element duration: {element.duration}, start_time: {element.start_time}")
+        
         # Add element based on layer parameter
         if layer == "bottom":
             self.elements.insert(0, element)
@@ -60,20 +67,27 @@ class Scene(VideoBase):
                     # 子シーンを0秒から開始させる
                     element.start_time = 0.0
                     self._has_content_at_start = True
+                    print(f"DEBUG: Setting child scene start_time to 0.0")
                 else:
                     # 通常の逐次配置
                     last_scene_end_time = 0.0
-                    for existing_element in self.elements:
+                    print(f"DEBUG: Calculating sequential placement, existing elements: {len(self.elements)-1}")
+                    for i, existing_element in enumerate(self.elements[:-1]):  # Exclude the just-added element
                         if isinstance(existing_element, Scene):
                             existing_start = existing_element.start_time if existing_element.start_time is not None else 0.0
                             existing_end = existing_start + existing_element.duration
+                            print(f"DEBUG: Existing scene {i}: start={existing_start}, duration={existing_element.duration}, end={existing_end}")
                             last_scene_end_time = max(last_scene_end_time, existing_end)
                     element.start_time = last_scene_end_time
+                    print(f"DEBUG: Setting child scene start_time to {element.start_time}")
             
             # For nested scenes, calculate end time based on scene's own timing
             element_start = element.start_time if element.start_time is not None else 0.0
             scene_end_time = element_start + element.duration
+            print(f"DEBUG: Child scene end time: {element_start} + {element.duration} = {scene_end_time}")
+            old_duration = self.duration
             self.duration = max(self.duration, scene_end_time)
+            print(f"DEBUG: Parent scene duration updated: {old_duration} -> {self.duration}")
         else:
             # BGMモードでないオーディオ要素とループモードでないビデオ/画像要素と他の要素のみがシーン時間に影響
             is_bgm_audio = isinstance(element, AudioElement) and getattr(element, 'loop_until_scene_end', False)
@@ -82,7 +96,9 @@ class Scene(VideoBase):
             
             if not (is_bgm_audio or is_loop_video or is_loop_image):
                 element_end_time = element.start_time + element.duration
+                old_duration = self.duration
                 self.duration = max(self.duration, element_end_time)
+                print(f"DEBUG: Non-scene element, duration updated: {old_duration} -> {self.duration}")
         
         # BGMモードのオーディオ要素とループモードのビデオ/画像要素の持続時間を更新（シーン時間決定後）
         self._update_loop_element_durations()
