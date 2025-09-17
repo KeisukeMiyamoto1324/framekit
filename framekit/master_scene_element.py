@@ -175,6 +175,7 @@ class MasterScene:
         """
         from .audio_element import AudioElement
         from .video_element import VideoElement
+        import copy
         
         # Calculate the total time offset for this scene
         scene_start = scene.start_time if scene.start_time is not None else 0.0
@@ -185,18 +186,22 @@ class MasterScene:
                 # Recursively collect from nested scenes
                 self._collect_audio_elements(element, total_offset)
             elif isinstance(element, AudioElement):
-                # Adjust audio timing to account for cumulative scene start times
-                element.start_time += total_offset
-                self.audio_elements.append(element)
+                # Create a copy to avoid modifying the original element's start_time
+                audio_copy = copy.deepcopy(element)
+                # Adjust timing only on the copy
+                audio_copy.start_time += total_offset
+                self.audio_elements.append(audio_copy)
             elif isinstance(element, VideoElement):
                 # Ensure the video element's audio element is created
                 element._ensure_audio_element()
                 audio_element = element.get_audio_element()
                 if audio_element is not None:
-                    # Adjust audio timing to account for cumulative scene start times
-                    audio_element.start_time += total_offset
+                    # Create a copy to avoid modifying the original element's start_time
+                    audio_copy = copy.deepcopy(audio_element)
+                    # Adjust timing only on the copy
+                    audio_copy.start_time += total_offset
                     # Only add if the video actually has audio
-                    self.audio_elements.append(audio_element)
+                    self.audio_elements.append(audio_copy)
     
     def set_output(self, filename: str):
         """出力ファイル名を設定"""

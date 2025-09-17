@@ -1,5 +1,9 @@
 from framekit import MasterScene, Scene, TextElement, AudioElement
 
+# Short1.wav: about 1sec
+# Short2.wav: about 1sec
+# Short3.wav: about 12sec
+
 def main():
     # Create master scene
     master_scene = MasterScene(
@@ -9,52 +13,55 @@ def main():
         output_filename="output/basic.mp4"
     )
     
-    # Scene 1: Title
-    scene1 = Scene()
-    effect1 = AudioElement("sample_asset/short1.wav")
-    title = (
-        TextElement("FrameKit", size=80, color=(255, 255, 255))
-            .position(960, 400, anchor="center")
-            .start_at(0)
-            .set_duration(effect1.duration)
+    opening_scene = Scene()
+    new_section = Scene()
+    
+    new_scene = Scene()
+    audio = AudioElement("sample_asset/short1.wav").set_volume(3)
+    text = (
+        TextElement("Short1", size=42, font_path="resource/NotoSansJP-ExtraBold.ttf")
+            .set_duration(audio.duration+0.25)
+            .position(x=1920//2, y=950, anchor="center")
+            .set_alignment("center")
+            .set_background(color=[0, 0, 0], alpha=150, padding=30)
+            .set_corner_radius(20)
     )
-    scene1.add(title)
-    scene1.add(effect1)
+    new_scene.add(audio)
+    new_scene.add(text)
+    new_section.add(new_scene)
     
-    # Scene 2: Subtitle
-    scene2 = Scene()
-    effect2 = AudioElement("sample_asset/short2.wav")
-    subtitle = (
-        TextElement("Programmatic Video Generation with Python", size=40, color=(200, 200, 255))
-            .position(960, 500, anchor="center")
-            .start_at(0)
-            .set_duration(effect2.duration)
+    new_scene = Scene()
+    audio = AudioElement("sample_asset/short2.wav").set_volume(3)
+    text = (
+        TextElement("Short2", size=42, font_path="resource/NotoSansJP-ExtraBold.ttf")
+            .set_duration(audio.duration+0.25)
+            .position(x=1920//2, y=950, anchor="center")
+            .set_alignment("center")
+            .set_background(color=[0, 0, 0], alpha=150, padding=30)
+            .set_corner_radius(20)
     )
-    scene2.add(subtitle)
-    scene2.add(effect2)
+    new_scene.add(audio)
+    new_scene.add(text)
+    new_section.add(new_scene)
     
-    # Scene 3: Description
-    scene3 = Scene()
-    description = (
-        TextElement("OpenGL Rendering • Text • Images • Video • Audio", size=30, color=(150, 255, 150))
-            .position(960, 600, anchor="center")
-            .start_at(0)
-            .set_duration(2)
+    new_scene = Scene()
+    audio = AudioElement("sample_asset/short3.wav").set_volume(3)
+    text = (
+        TextElement("Short3", size=42, font_path="resource/NotoSansJP-ExtraBold.ttf")
+            .set_duration(audio.duration+0.25)
+            .position(x=1920//2, y=950, anchor="center")
+            .set_alignment("center")
+            .set_background(color=[0, 0, 0], alpha=150, padding=30)
+            .set_corner_radius(20)
     )
-    effect3 = AudioElement("sample_asset/effect1.mp3")
-    scene3.add(description)
-    scene3.add(effect3)
+    new_scene.add(audio)
+    new_scene.add(text)
+    new_section.add(new_scene)
     
-    scene = Scene()
+    opening_scene.add(new_section)
     
-    # Add scenes with sequential timing
-    scene.add(scene1)  # 0-2 seconds
-    scene.add(scene2)  # 2-4 seconds
-    scene.add(scene3)  # 4-6 seconds
-    
-    # Render
-    master_scene.add(scene)
-    master_scene.render()
+    master_scene.add(opening_scene)
 
-if __name__ == "__main__":
-    main()
+    master_scene.render()
+    
+main()
