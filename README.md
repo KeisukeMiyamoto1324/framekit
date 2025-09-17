@@ -13,6 +13,11 @@ A powerful Python-based video editor for programmatic video generation using Ope
 - **🔄 Fluent API**: Method chaining for clean, readable code
 - **🌐 Cross-Platform**: Works on macOS, Linux, and Windows
 
+## Installation
+```
+pip install framekit
+```
+
 ## Core Components
 
 ### VideoBase
