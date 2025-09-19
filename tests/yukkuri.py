@@ -24,17 +24,19 @@ bg = (
         .position(VIDEO_WIDTH//3, VIDEO_HEIGHT//3, "center")
         .start_at(0)
         .set_duration(3)
-        .set_blur(10)
-        .set_rotate(100)
+        # .set_blur(10)
+        # .set_rotate(100)
+        
 )
 
 text = (
     TextElement("Hello world")
         .position(VIDEO_WIDTH//2, VIDEO_HEIGHT//2, "center")
         .start_at(0.5)
-        .set_blur(3)
+        # .set_blur(3)
         .set_duration(2.5)
-        .set_rotate(300)
+        # .set_rotate(300)
+        .set_flip("vertical")
 )
 
 scene.add(bg)

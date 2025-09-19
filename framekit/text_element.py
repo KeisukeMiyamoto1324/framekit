@@ -410,6 +410,12 @@ class TextElement(VideoBase):
         if hasattr(self, 'rotation') and self.rotation != 0:
             glRotatef(self.rotation, 0, 0, 1)
         
+        # フリップ変換を適用
+        flip_x = -1.0 if getattr(self, 'flip_horizontal', False) else 1.0
+        flip_y = -1.0 if getattr(self, 'flip_vertical', False) else 1.0
+        if flip_x != 1.0 or flip_y != 1.0:
+            glScalef(flip_x, flip_y, 1.0)
+        
         # スケールを適用
         if hasattr(self, 'scale') and self.scale != 1.0:
             glScalef(self.scale, self.scale, 1.0)

@@ -87,6 +87,8 @@ class VideoBase:
         self.base_scale: float = 1.0  # Base scale before animations
         self.rotation: float = 0.0  # Rotation angle in degrees
         self.scale: float = 1.0  # Scale value
+        self.flip_horizontal: bool = False  # Horizontal flip flag
+        self.flip_vertical: bool = False  # Vertical flip flag
     
     def position(self: VideoBaseT, x: float, y: float, anchor: Optional[Literal['center', 'top-left', 'top-right', 'bottom-left', 'bottom-right']] = None) -> VideoBaseT:
         """Set position coordinates.
@@ -285,6 +287,32 @@ class VideoBase:
             Self for method chaining
         """
         self.rotation = angle
+        return self
+    
+    def set_flip(self: VideoBaseT, direction: Union[str, Literal['horizontal', 'vertical', 'both', 'none']] = 'horizontal') -> VideoBaseT:
+        """Set flip options for the element.
+        
+        Args:
+            direction: Flip direction - 'horizontal' (left-right), 'vertical' (up-down), 'both', or 'none'
+            
+        Returns:
+            Self for method chaining
+        """
+        if direction == 'horizontal':
+            self.flip_horizontal = True
+            self.flip_vertical = False
+        elif direction == 'vertical':
+            self.flip_horizontal = False
+            self.flip_vertical = True
+        elif direction == 'both':
+            self.flip_horizontal = True
+            self.flip_vertical = True
+        elif direction == 'none':
+            self.flip_horizontal = False
+            self.flip_vertical = False
+        else:
+            raise ValueError(f"Invalid flip direction: {direction}. Use 'horizontal', 'vertical', 'both', or 'none'")
+        
         return self
 
     def _apply_border_and_background_to_image(self, img: Image.Image) -> Image.Image:

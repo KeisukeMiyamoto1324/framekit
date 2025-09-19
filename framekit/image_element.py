@@ -253,6 +253,12 @@ class ImageElement(VideoBase):
         if current_rotation != 0:
             glRotatef(current_rotation, 0, 0, 1)
         
+        # Apply flip transformations
+        flip_x = -1.0 if getattr(self, 'flip_horizontal', False) else 1.0
+        flip_y = -1.0 if getattr(self, 'flip_vertical', False) else 1.0
+        if flip_x != 1.0 or flip_y != 1.0:
+            glScalef(flip_x, flip_y, 1.0)
+        
         # Apply additional scale beyond the calculated scale
         base_scale = getattr(self, 'scale', 1.0)
         if base_scale != 1.0:
