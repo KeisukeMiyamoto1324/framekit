@@ -18,26 +18,25 @@ master.set_output("yukkuri.mp4")
 
 scene = Scene()
 
-title = (
-    TextElement("This is a title of this video.", size=20)
-        .position(VIDEO_WIDTH//3, VIDEO_HEIGHT//3, "center")
-        .set_duration(30)
-        # .set_background(color=[0, 0, 0], padding=20)
-        .set_corner_radius(10)
-        .animate_until_scene_end('scale', AnimationPresets.pulse(from_scale=1.0, to_scale=1.2, duration=2.0), 
-                                repeat_delay=0, repeat_mode='restart')
-)
-
 bg = (
-    ImageElement("sample_asset/bg.jpg")
+    ImageElement("sample_asset/earth.jpg")
         .set_crop(400, 400, mode="fill")
         .position(VIDEO_WIDTH//3, VIDEO_HEIGHT//3, "center")
-        .set_loop_until_scene_end()
         .start_at(0)
+        .set_duration(3)
+        .set_blur(10)
+)
+
+text = (
+    TextElement("Hello world")
+        .position(VIDEO_WIDTH//2, VIDEO_HEIGHT//2, "center")
+        .start_at(0.5)
+        .set_blur(3)
+        .set_duration(2.5)
 )
 
 scene.add(bg)
-scene.add(title)
+scene.add(text)
 
 master.add(scene)
 master.render()

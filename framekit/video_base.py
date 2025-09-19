@@ -1,5 +1,5 @@
 from typing import Dict, Optional, Tuple, Any, Literal, Union, TypeVar
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 from .animation import Animation, AnimationManager, RepeatingAnimation
 
 # TypeVar for method chaining with inheritance
@@ -25,6 +25,7 @@ class VideoBase:
         border_color: Border color as RGB tuple
         border_width: Border width in pixels
         corner_radius: Corner radius for rounded corners
+        blur_strength: Blur strength (0 = no blur, higher values = more blur)
         crop_width: Crop width in pixels
         crop_height: Crop height in pixels
         crop_mode: Crop mode ('fill' or 'fit')
@@ -62,6 +63,9 @@ class VideoBase:
         
         # Corner radius settings
         self.corner_radius: float = 0
+        
+        # Blur settings
+        self.blur_strength: float = 0
         
         # Crop settings
         self.crop_width: Optional[int] = None
@@ -256,6 +260,20 @@ class VideoBase:
         # サイズを再計算
         self.calculate_size()
         return self
+    
+    def set_blur(self: VideoBaseT, strength: float) -> VideoBaseT:
+        """Set blur strength.
+        
+        Args:
+            strength: Blur strength (0 = no blur, higher values = more blur)
+            
+        Returns:
+            Self for method chaining
+        """
+        self.blur_strength = max(0, strength)  # 負の値は0に補正
+        # テクスチャを再作成する必要がある
+        self.texture_created = False
+        return self
 
     def _apply_border_and_background_to_image(self, img: Image.Image) -> Image.Image:
         """Apply background and border to an image.
@@ -350,6 +368,21 @@ class VideoBase:
         img.putalpha(mask)
         
         return img
+    
+    def _apply_blur_to_image(self, img: Image.Image) -> Image.Image:
+        """Apply blur effect to an image.
+        
+        Args:
+            img: Source image to apply blur to
+            
+        Returns:
+            Blurred image
+        """
+        if self.blur_strength <= 0:
+            return img
+        
+        # PILのGaussianBlurフィルターを適用
+        return img.filter(ImageFilter.GaussianBlur(radius=self.blur_strength))
     
     def _calculate_crop_dimensions(self, original_width: int, original_height: int) -> Tuple[int, int, int, int]:
         """Calculate crop scale and position.
@@ -677,6 +710,11 @@ class VideoBase:
         if animated_corner_radius is not None:
             properties['corner_radius'] = max(0, animated_corner_radius)
             
+        # ブラー強度のアニメーション
+        animated_blur_strength = self.animation_manager.get_animated_value('blur_strength', time, self.blur_strength)
+        if animated_blur_strength is not None:
+            properties['blur_strength'] = max(0, animated_blur_strength)
+            
         return properties
     
     def update_animated_properties(self, time: float) -> None:
@@ -699,6 +737,8 @@ class VideoBase:
             self.rotation = animated_props['rotation']
         if 'corner_radius' in animated_props:
             self.corner_radius = animated_props['corner_radius']
+        if 'blur_strength' in animated_props:
+            self.blur_strength = animated_props['blur_strength']
     
     def has_animations(self, time: Optional[float] = None) -> bool:
         """Check if element has animations.

@@ -264,6 +264,9 @@ class TextElement(VideoBase):
         # 背景と枠線を適用
         img = self._apply_border_and_background_to_image(img)
         
+        # ブラー効果を適用
+        img = self._apply_blur_to_image(img)
+        
         # パディングと角丸を元に戻す
         self.padding = original_padding
         self.corner_radius = original_corner_radius

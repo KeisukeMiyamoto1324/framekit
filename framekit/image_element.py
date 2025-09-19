@@ -88,6 +88,9 @@ class ImageElement(VideoBase):
             # Apply border and background
             img = self._apply_border_and_background_to_image(img)
             
+            # Apply blur effect
+            img = self._apply_blur_to_image(img)
+            
             # Update texture size
             self.texture_width, self.texture_height = img.size
             

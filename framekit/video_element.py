@@ -228,6 +228,9 @@ class VideoElement(VideoBase):
         # Apply border and background
         pil_frame = self._apply_border_and_background_to_image(pil_frame)
         
+        # Apply blur effect
+        pil_frame = self._apply_blur_to_image(pil_frame)
+        
         # ボックスサイズを更新（背景・枠線を含む最終サイズ）
         self.width = pil_frame.size[0]
         self.height = pil_frame.size[1]
