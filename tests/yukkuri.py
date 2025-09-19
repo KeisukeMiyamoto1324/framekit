@@ -25,6 +25,7 @@ bg = (
         .start_at(0)
         .set_duration(3)
         .set_blur(10)
+        .set_rotate(100)
 )
 
 text = (
@@ -33,6 +34,7 @@ text = (
         .start_at(0.5)
         .set_blur(3)
         .set_duration(2.5)
+        .set_rotate(300)
 )
 
 scene.add(bg)

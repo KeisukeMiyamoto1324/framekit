@@ -238,8 +238,28 @@ class ImageElement(VideoBase):
         # Restore original size
         self.width, self.height = original_width, original_height
         
-        # Save current OpenGL state
-        glPushAttrib(GL_ALL_ATTRIB_BITS)
+        # Save current OpenGL matrix state
+        glPushMatrix()
+        
+        # Apply transformations (rotation and scale) around the center
+        center_x = render_x + scaled_width / 2
+        center_y = render_y + scaled_height / 2
+        
+        # Move to center for rotation
+        glTranslatef(center_x, center_y, 0)
+        
+        # Apply rotation if set
+        current_rotation = animated_props.get('rotation', getattr(self, 'rotation', 0.0))
+        if current_rotation != 0:
+            glRotatef(current_rotation, 0, 0, 1)
+        
+        # Apply additional scale beyond the calculated scale
+        base_scale = getattr(self, 'scale', 1.0)
+        if base_scale != 1.0:
+            glScalef(base_scale, base_scale, 1.0)
+        
+        # Move back from center
+        glTranslatef(-center_x, -center_y, 0)
         
         # Apply alpha
         if current_alpha < 1.0:
@@ -275,8 +295,8 @@ class ImageElement(VideoBase):
         glVertex2f(render_x, render_y)
         glEnd()
         
-        # Restore OpenGL state
-        glPopAttrib()
+        # Restore matrix state
+        glPopMatrix()
 
     def calculate_size(self) -> None:
         """Pre-calculate image box size including scaling, cropping, padding and styling.

@@ -473,6 +473,9 @@ class VideoElement(VideoBase):
         self.texture_width = actual_width
         self.texture_height = actual_height
         
+        # Get animated properties for transformation
+        animated_props = self.get_animated_properties(time)
+        
         # Get actual render position using anchor calculation
         # Temporarily set the current size for anchor calculation
         original_width, original_height = self.width, self.height
@@ -480,8 +483,42 @@ class VideoElement(VideoBase):
         
         render_x, render_y, _, _ = self.get_actual_render_position()
         
+        # Apply animation offsets
+        if 'x' in animated_props:
+            render_x = animated_props['x'] + self._calculate_anchor_offset(actual_width, actual_height)[0]
+        if 'y' in animated_props:
+            render_y = animated_props['y'] + self._calculate_anchor_offset(actual_width, actual_height)[1]
+        
         # Restore original size
         self.width, self.height = original_width, original_height
+        
+        # Save current OpenGL matrix state
+        glPushMatrix()
+        
+        # Apply transformations (rotation and scale) around the center
+        center_x = render_x + self.texture_width / 2
+        center_y = render_y + self.texture_height / 2
+        
+        # Move to center for rotation
+        glTranslatef(center_x, center_y, 0)
+        
+        # Apply rotation if set
+        current_rotation = animated_props.get('rotation', getattr(self, 'rotation', 0.0))
+        if current_rotation != 0:
+            glRotatef(current_rotation, 0, 0, 1)
+        
+        # Apply scale if set
+        current_scale = animated_props.get('scale', getattr(self, 'scale', 1.0))
+        if current_scale != 1.0:
+            glScalef(current_scale, current_scale, 1.0)
+        
+        # Move back from center
+        glTranslatef(-center_x, -center_y, 0)
+        
+        # Apply alpha
+        current_alpha = animated_props.get('alpha', 1.0)
+        if current_alpha < 1.0:
+            glColor4f(1.0, 1.0, 1.0, current_alpha / 255.0)
         
         # Enable alpha blending
         glEnable(GL_BLEND)
@@ -509,8 +546,8 @@ class VideoElement(VideoBase):
         glVertex2f(render_x, render_y)
         glEnd()
         
-        # Restore OpenGL state
-        glPopAttrib()
+        # Restore matrix state
+        glPopMatrix()
 
     def calculate_size(self) -> None:
         """Pre-calculate video box size including scaling, cropping, padding and styling.

@@ -274,6 +274,18 @@ class VideoBase:
         # テクスチャを再作成する必要がある
         self.texture_created = False
         return self
+    
+    def set_rotate(self: VideoBaseT, angle: float) -> VideoBaseT:
+        """Set rotation angle in degrees.
+        
+        Args:
+            angle: Rotation angle in degrees
+            
+        Returns:
+            Self for method chaining
+        """
+        self.rotation = angle
+        return self
 
     def _apply_border_and_background_to_image(self, img: Image.Image) -> Image.Image:
         """Apply background and border to an image.
