@@ -190,3 +190,4 @@ Thumbs.db
 *.woff2
 
 sample_asset/
+deploy.sh
