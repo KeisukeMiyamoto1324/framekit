@@ -1,0 +1,8 @@
+numpy
+PyOpenGL
+Pillow
+opencv-python
+pygame
+tqdm
+mutagen
+librosa
