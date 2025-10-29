@@ -325,6 +325,8 @@ class MasterScene:
                 process.stdin.close()
             except BrokenPipeError:
                 pass
+            finally:
+                process.stdin = None
         
         _, stderr_data = process.communicate()
         if process.returncode != 0:
@@ -632,4 +634,3 @@ class MasterScene:
             # オーディオミキシング（ビデオ作成後）
             if self.audio_elements:
                 final_output = self._create_audio_mix(video_path)
-
