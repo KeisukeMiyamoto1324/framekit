@@ -1,4 +1,5 @@
 import os
+import logging
 import cv2
 import numpy as np
 from typing import List, Literal
@@ -7,8 +8,13 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from .scene_element import Scene
 
-# Pygameの警告を抑制
+# ---------------------------------------------------------
+# Silence optional initialisation warnings from pygame and PyOpenGL
+# ---------------------------------------------------------
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+os.environ.setdefault('PYOPENGL_DISABLE_WARNINGS', '1')
+logging.getLogger('OpenGL').setLevel(logging.ERROR)
+logging.getLogger('OpenGL.plugins').setLevel(logging.ERROR)
 import pygame
 
 # オーディオ処理用ライブラリの試行インポート
