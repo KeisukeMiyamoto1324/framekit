@@ -19,6 +19,7 @@ try:
 except ImportError:
     HAS_FFMPEG = False
 
+_LIBX264_WARNING_EMITTED = False
 
 def has_audio_stream(video_path: str) -> bool:
     """Check if a video file has an audio stream using ffprobe.
@@ -270,24 +271,72 @@ class MasterScene:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
     def _setup_video_writer(self):
-        """動画書き込み設定"""
-        # オーディオ要素がある場合は一時ファイル、ない場合は指定ファイル名
+        # ---------------------------------------------------------
+        # Launch an FFmpeg/libx264 encoder that accepts raw BGR frames
+        # ---------------------------------------------------------
         if self.audio_elements:
-            # 一時ファイル名を作成
             base_name = os.path.splitext(self.output_filename)[0]
             ext = os.path.splitext(self.output_filename)[1]
             full_path = f"{base_name}_temp_video_only{ext}"
         else:
             full_path = self.output_filename
         
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        if not HAS_FFMPEG:
+            raise RuntimeError("FFmpeg with libx264 support is required to encode browser-compatible video.")
         
-        video_writer = cv2.VideoWriter(full_path, fourcc, self.fps, (self.width, self.height))
+        ffmpeg_cmd = [
+            'ffmpeg',
+            '-y',
+            '-f', 'rawvideo',
+            '-pix_fmt', 'bgr24',
+            '-s', f'{self.width}x{self.height}',
+            '-r', str(self.fps),
+            '-i', '-',
+            '-an',
+            '-c:v', 'libx264',
+            '-preset', 'medium',
+            '-profile:v', 'baseline',
+            '-level', '3.1',
+            '-pix_fmt', 'yuv420p',
+            '-movflags', '+faststart',
+            '-g', str(self.fps),
+            '-keyint_min', str(self.fps),
+            full_path
+        ]
         
-        if not video_writer.isOpened():
-            raise Exception(f"動画ファイル {full_path} を作成できませんでした")
+        try:
+            process = subprocess.Popen(
+                ffmpeg_cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE
+            )
+        except FileNotFoundError as exc:
+            raise RuntimeError("FFmpeg is not installed or not reachable on PATH. Install FFmpeg with libx264 support.") from exc
         
-        return video_writer, full_path
+        return process, full_path, ffmpeg_cmd
+
+    def _finalize_video_writer(self, process, ffmpeg_cmd):
+        # ---------------------------------------------------------
+        # Close the encoder stdin and surface any FFmpeg/libx264 errors
+        # ---------------------------------------------------------
+        if process.stdin:
+            try:
+                process.stdin.close()
+            except BrokenPipeError:
+                pass
+        
+        _, stderr_data = process.communicate()
+        if process.returncode != 0:
+            error_text = stderr_data.decode('utf-8', errors='replace') if stderr_data else ""
+            global _LIBX264_WARNING_EMITTED
+            if "Unknown encoder 'libx264'" in error_text and not _LIBX264_WARNING_EMITTED:
+                print("Warning: FFmpeg was built without libx264. Install FFmpeg with x264 support to render Chrome-compatible video.")
+                _LIBX264_WARNING_EMITTED = True
+            raise RuntimeError(f"FFmpeg command failed ({' '.join(ffmpeg_cmd)}): {error_text}")
+        
+        if process.stderr:
+            process.stderr.close()
     
     def _capture_frame(self):
         """現在の画面をキャプチャ"""
@@ -539,7 +588,7 @@ class MasterScene:
         self._init_opengl()
         
         # 動画書き込み設定
-        video_writer, video_path = self._setup_video_writer()
+        video_process, video_path, ffmpeg_cmd = self._setup_video_writer()
         
         try:
             total_frames = int(self.total_duration * self.fps)
@@ -565,16 +614,22 @@ class MasterScene:
                     
                     # フレームをキャプチャして動画に書き込み
                     frame = self._capture_frame()
-                    video_writer.write(frame)
+                    try:
+                        video_process.stdin.write(frame.tobytes())
+                    except BrokenPipeError as exc:
+                        raise RuntimeError("FFmpeg encoder pipe closed unexpectedly. Check FFmpeg installation.") from exc
                     
                     # プログレスバーを更新
                     pbar.update(1)
             
         finally:
             # クリーンアップ
-            video_writer.release()
-            pygame.quit()
+            try:
+                self._finalize_video_writer(video_process, ffmpeg_cmd)
+            finally:
+                pygame.quit()
             
             # オーディオミキシング（ビデオ作成後）
             if self.audio_elements:
                 final_output = self._create_audio_mix(video_path)
+
