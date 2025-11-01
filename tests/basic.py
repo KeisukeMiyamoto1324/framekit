@@ -1,4 +1,8 @@
+
+# PYTHONPATH=$(pwd) python3 -m tests.basic
+
 from framekit import MasterScene, Scene, TextElement, AudioElement, ImageElement
+from PIL import Image
 
 # Short1.wav: about 1sec
 # Short2.wav: about 1sec
@@ -24,6 +28,7 @@ def main():
             .set_corner_radius(20)
     )
     img = (
+        # ImageElement(Image.open(("sample_asset/zundamon.png")))
         ImageElement("sample_asset/zundamon.png")
             .set_scale(0.25)
             .position(x=50, y=1030, anchor="bottom-left")

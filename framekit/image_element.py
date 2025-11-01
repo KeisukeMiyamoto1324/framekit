@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Union
 import numpy as np
 from OpenGL.GL import *
 from PIL import Image
@@ -22,15 +22,20 @@ class ImageElement(VideoBase):
         original_height: Original height of the source image
     """
     
-    def __init__(self, image_path: str, scale: float = 1.0) -> None:
+    def __init__(self, image_path: Union[str, Image.Image], scale: float = 1.0) -> None:
         """Initialize a new ImageElement.
         
         Args:
-            image_path: Path to the image file (supports common formats like PNG, JPG, etc.)
+            image_path: Path to the image file or a PIL image instance
             scale: Scale multiplier for the image (1.0 = original size, 0.5 = half size, etc.)
         """
         super().__init__()
-        self.image_path: str = image_path
+        if isinstance(image_path, Image.Image):
+            self.image_path: Optional[str] = None
+            self._image_reference: Optional[Image.Image] = image_path.copy()
+        else:
+            self.image_path = image_path
+            self._image_reference = None
         self.scale: float = scale
         self.texture_id: Optional[int] = None
         self.texture_width: int = 0
@@ -43,6 +48,34 @@ class ImageElement(VideoBase):
         # 初期化時にサイズを計算
         self.calculate_size()
     
+    # ---------------------------------------------------------
+    # Prepare a usable PIL image regardless of source type
+    # ---------------------------------------------------------
+    def _load_image(self) -> Optional[Image.Image]:
+        if self._image_reference is not None:
+            return self._image_reference.copy()
+        if self.image_path is not None:
+            if not os.path.exists(self.image_path):
+                print(f"Warning: Image file not found: {self.image_path}")
+                return None
+            try:
+                with Image.open(self.image_path) as img:
+                    return img.copy()
+            except Exception as e:
+                print(f"Error loading image {self.image_path}: {e}")
+                return None
+        return None
+    
+    # ---------------------------------------------------------
+    # Provide human-readable description for debugging output
+    # ---------------------------------------------------------
+    def _describe_source(self) -> str:
+        if self.image_path:
+            return self.image_path
+        if self._image_reference is not None:
+            return "<PIL.Image.Image>"
+        return "<unknown image>"
+    
     def _create_image_texture(self) -> None:
         """Initialize image texture creation (deferred until OpenGL context is available).
         
@@ -52,20 +85,20 @@ class ImageElement(VideoBase):
         # Texture creation is deferred until render time (requires OpenGL context)
         self.texture_created = False
     
+    # ---------------------------------------------------------
+    # Create OpenGL texture immediately when context available
+    # ---------------------------------------------------------
     def _create_texture_now(self) -> None:
         """Create OpenGL texture for the image within an OpenGL context.
         
         This method handles image loading, format conversion, scaling, cropping,
         corner radius, border/background application, and OpenGL texture creation.
         """
-        if not os.path.exists(self.image_path):
-            print(f"Warning: Image file not found: {self.image_path}")
+        img = self._load_image()
+        if img is None:
             return
         
         try:
-            # Load image
-            img = Image.open(self.image_path)
-            
             # Convert to RGBA format (for alpha channel support)
             if img.mode != 'RGBA':
                 img = img.convert('RGBA')
@@ -119,8 +152,10 @@ class ImageElement(VideoBase):
             self.texture_created = True
             
         except Exception as e:
-            print(f"Error loading image {self.image_path}: {e}")
+            print(f"Error loading image {self._describe_source()}: {e}")
             self.texture_created = False
+        finally:
+            img.close()
     
     def set_scale(self, scale: float) -> 'ImageElement':
         """Set image scale multiplier.
@@ -288,17 +323,15 @@ class ImageElement(VideoBase):
         This method reads image metadata and calculates the final box size
         including scaling, cropping, background padding and border width to set the width and height attributes.
         """
-        if not os.path.exists(self.image_path):
+        img = self._load_image()
+        if img is None:
             self.width = 0
             self.height = 0
             return
         
         try:
-            # 画像の情報だけを取得（実際の読み込みはしない）
-            from PIL import Image
-            with Image.open(self.image_path) as img:
-                original_width, original_height = img.size
-            
+            original_width, original_height = img.size
+        
             # スケールを適用
             scaled_width = int(original_width * self.scale)
             scaled_height = int(original_height * self.scale)
@@ -324,9 +357,11 @@ class ImageElement(VideoBase):
             self.height = canvas_height
             
         except Exception as e:
-            print(f"Error calculating image size {self.image_path}: {e}")
+            print(f"Error calculating image size {self._describe_source()}: {e}")
             self.width = 0
             self.height = 0
+        finally:
+            img.close()
     
     def __del__(self) -> None:
         """Destructor to clean up OpenGL texture resources.
